@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>九九财富投资晨报</title>
+  <meta name="description" content="九九 — 老板的超级智能财富与投资助手，每日自动生成财富投资晨报">
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --surface2: #1a2332;
+      --border: #1e2d3d;
+      --border-light: #2a3a4a;
+      --text: #e2e8f0;
+      --text-muted: #8899aa;
+      --text-dim: #5a6a7a;
+      --gold: #f59e0b;
+      --gold-light: #fbbf24;
+      --gold-bg: rgba(245,158,11,0.08);
+      --green: #10b981;
+      --green-bg: rgba(16,185,129,0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.1);
+      --blue: #3b82f6;
+      --blue-light: #60a5fa;
+      --blue-bg: rgba(59,130,246,0.08);
+      --purple: #a78bfa;
+      --purple-bg: rgba(167,139,250,0.1);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', 'PingFang SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .hero {
+      background: linear-gradient(180deg, #0f172a 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 20px 36px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gold-bg);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.75rem;
+      color: var(--gold-light);
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+    .hero-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light), var(--blue-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+    .hero .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+    .hero .update-info {
+      color: var(--text-dim);
+      font-size: 0.82rem;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      max-width: 960px;
+      margin: -20px auto 0;
+      padding: 0 20px;
+      position: relative;
+      z-index: 10;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 0 16px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus-within { border-color: var(--gold); }
+    .search-box input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 12px 10px;
+      font-family: inherit;
+    }
+    .search-box input::placeholder { color: var(--text-dim); }
+
+    /* Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card .num { font-size: 1.6rem; font-weight: 700; color: var(--gold); }
+    .stat-card .label { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+
+    /* Month Group */
+    .month-group { margin-bottom: 32px; }
+    .month-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .month-header .month-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+    .month-header .count {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    /* Report Card */
+    .container { max-width: 960px; margin: 0 auto; padding: 0 20px 40px; }
+    .report-card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 14px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .report-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--gold), var(--blue));
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .report-card:hover {
+      border-color: var(--gold);
+      box-shadow: 0 4px 24px rgba(245,158,11,0.08);
+      transform: translateY(-2px);
+    }
+    .report-card:hover::before { opacity: 1; }
+    .report-card.latest { border-color: rgba(245,158,11,0.3); }
+    .report-card.latest::before { opacity: 1; }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .card-date {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .card-date .weekday { font-weight: 400; color: var(--text-muted); font-size: 0.85rem; margin-left: 6px; }
+    .latest-tag {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #000;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .card-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .card-summary {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      margin-bottom: 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-sections {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .section-tag {
+      background: var(--blue-bg);
+      color: var(--blue-light);
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    /* Report Detail Page */
+    .nav-bar {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-bar a {
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.88rem;
+    }
+    .nav-bar a:hover { text-decoration: underline; }
+    .report-content {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
+    .report-content h1 {
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+      color: var(--gold-light);
+    }
+    .report-content h2 {
+      font-size: 1.15rem;
+      margin: 24px 0 12px;
+      color: var(--blue-light);
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .report-content h3 {
+      font-size: 1rem;
+      margin: 18px 0 8px;
+      color: var(--text);
+    }
+    .report-content p {
+      margin-bottom: 10px;
+      color: var(--text-muted);
+    }
+    .report-content strong {
+      color: var(--text);
+    }
+    .report-content ul, .report-content ol {
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+    .report-content li {
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .report-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+    .report-content blockquote {
+      border-left: 3px solid var(--gold);
+      background: var(--gold-bg);
+      padding: 12px 16px;
+      margin: 16px 0;
+      border-radius: 0 8px 8px 0;
+      color: var(--text-muted);
+    }
+    .report-content blockquote strong {
+      color: var(--gold-light);
+    }
+    .report-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    .report-content th, .report-content td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .report-content th {
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .report-content td {
+      color: var(--text-muted);
+    }
+    .report-content a { color: var(--blue-light); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.78rem;
+    }
+    .footer a { color: var(--gold); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 1.8rem; }
+      .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .stat-card { padding: 12px 8px; }
+      .stat-card .num { font-size: 1.3rem; }
+      .report-card { padding: 16px 18px; }
+      .card-date { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="hero-badge"><span class="dot"></span> 每日 8:00 更新</div>
+    <h1>九九财富投资晨报</h1>
+    <p class="subtitle">📈 持仓追踪 · AI/科技动态 · 投资策略</p>
+    <p class="update-info" id="updateInfo"></p>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="搜索日期、关键词..." autocomplete="off">
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+  </div>
+
+  <div class="container" id="reportList"></div>
+
+  <div class="footer">
+    <p style="margin-top:4px;">
+      九九财富投资晨报 · 每日自动生成 · 
+      <a href="https://github.com/corinwe/wealth-invest-daily" target="_blank">GitHub</a>
+    </p>
+  </div>
+
+<script>
+const REPORTS = REPORTS_JSON_PLACEHOLDER;
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+document.getElementById('updateInfo').textContent =
+  '已收录 ' + REPORTS.length + ' 期晨报 · 最近更新：' + formatDate(REPORTS[0]?.date);
+
+function formatDate(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.getFullYear() + '年' + (dt.getMonth()+1) + '月' + dt.getDate() + '日';
+}
+function getWeekday(d) {
+  if (!d) return '';
+  return WEEKDAYS[new Date(d + 'T00:00:00').getDay()];
+}
+function getMonthKey(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
+}
+function getMonthLabel(key) {
+  const [y, m] = key.split('-');
+  return y + '年' + MONTHS[parseInt(m)-1];
+}
+
+function renderStats(reports) {
+  const totalWords = reports.reduce((s, r) => s + (r.word_count || 0), 0);
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="num">${reports.length}</div><div class="label">收录期数</div></div>
+    <div class="stat-card"><div class="num">${(totalWords/1000).toFixed(1)}k</div><div class="label">总字数</div></div>
+    <div class="stat-card"><div class="num">${reports.reduce((s, r) => s + (r.sections?.length || 0), 0)}</div><div class="label">分析板块</div></div>
+  `;
+}
+
+function renderReports(reports, query = '') {
+  const listEl = document.getElementById('reportList');
+  let filtered = [...reports];
+
+  if (query) {
+    const q = query.toLowerCase();
+    filtered = filtered.filter(r =>
+      r.date.includes(q) ||
+      (r.summary || '').toLowerCase().includes(q) ||
+      (r.sections || []).some(s => s.title.toLowerCase().includes(q))
+    );
+  }
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>没有匹配的晨报</p></div>';
+    return;
+  }
+
+  const groups = {};
+  filtered.forEach(r => {
+    const key = getMonthKey(r.date);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  const sortedKeys = Object.keys(groups).sort().reverse();
+  let html = '';
+
+  sortedKeys.forEach(key => {
+    html += `<div class="month-group">`;
+    html += `<div class="month-header"><span class="month-label">${getMonthLabel(key)}</span><span class="count">${groups[key].length}期</span></div>`;
+    groups[key].forEach(r => {
+      const isLatest = (r.date === reports[0]?.date);
+      html += `
+        <a class="report-card${isLatest ? ' latest' : ''}" href="report.html?file=${encodeURIComponent(r.file)}">
+          <div class="card-top">
+            <div class="card-date">${r.date}<span class="weekday">${getWeekday(r.date)}</span></div>
+            ${isLatest ? '<span class="latest-tag">最新</span>' : ''}
+          </div>
+          <div class="card-meta">
+            <span>📝 ${r.word_count ? (r.word_count/1000).toFixed(1)+'k字' : '-'}</span>
+            <span>📂 ${r.sections ? r.sections.length : 0}个板块</span>
+          </div>
+          <div class="card-summary">${r.summary || '九九财富投资晨报'}</div>
+          <div class="card-sections">
+            ${(r.sections || []).map(s => `<span class="section-tag">${s.title}</span>`).join('')}
+          </div>
+        </a>
+      `;
+    });
+    html += `</div>`;
+  });
+
+  listEl.innerHTML = html;
+}
+
+renderStats(REPORTS);
+renderReports(REPORTS);
+
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => renderReports(REPORTS, e.target.value), 200);
+});
+</script>
+</body>
+</html>

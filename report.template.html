@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>九九财富投资晨报</title>
+  <meta name="description" content="九九财富投资晨报 - 每日晨报详情">
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --surface2: #1a2332;
+      --border: #1e2d3d;
+      --border-light: #2a3a4a;
+      --text: #e2e8f0;
+      --text-muted: #8899aa;
+      --text-dim: #5a6a7a;
+      --gold: #f59e0b;
+      --gold-light: #fbbf24;
+      --gold-bg: rgba(245,158,11,0.08);
+      --green: #10b981;
+      --green-bg: rgba(16,185,129,0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.1);
+      --blue: #3b82f6;
+      --blue-light: #60a5fa;
+      --blue-bg: rgba(59,130,246,0.08);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', 'PingFang SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+    .nav-bar {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 24px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-bar a {
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-bar a:hover { text-decoration: underline; }
+    .nav-bar .nav-right { display: flex; gap: 12px; }
+    .report-content {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
+    .report-content .date-header {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--gold-light);
+    }
+    .report-content .weekday-sub {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+    .report-content h2 {
+      font-size: 1.15rem;
+      margin: 28px 0 14px;
+      color: var(--blue-light);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .report-content h3 {
+      font-size: 1rem;
+      margin: 20px 0 10px;
+      color: var(--text);
+    }
+    .report-content p {
+      margin-bottom: 12px;
+      color: var(--text-muted);
+    }
+    .report-content strong { color: var(--text); }
+    .report-content ul, .report-content ol {
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+    .report-content li {
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+    .report-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    .report-content blockquote {
+      border-left: 3px solid var(--gold);
+      background: var(--gold-bg);
+      padding: 14px 18px;
+      margin: 18px 0;
+      border-radius: 0 8px 8px 0;
+      color: var(--text-muted);
+    }
+    .report-content blockquote strong { color: var(--gold-light); }
+    .report-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.88rem;
+    }
+    .report-content th, .report-content td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    .report-content th {
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .report-content td { color: var(--text-muted); }
+    .report-content a { color: var(--blue-light); text-decoration: none; }
+    .report-content a:hover { text-decoration: underline; }
+    .report-content code {
+      background: var(--surface2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .loading { text-align: center; padding: 80px 20px; color: var(--text-dim); }
+    .not-found { text-align: center; padding: 80px 20px; color: var(--text-dim); }
+    .not-found .icon { font-size: 3rem; margin-bottom: 12px; }
+
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.78rem;
+    }
+    .footer a { color: var(--gold); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <div class="nav-bar">
+    <a href="index.html">← 所有晨报</a>
+    <div class="nav-right" id="navLinks">
+      <a id="prevLink" href="#">← 上期</a>
+      <a id="nextLink" href="#">下期 →</a>
+    </div>
+  </div>
+
+  <div class="report-content" id="reportContent">
+    <div class="loading">加载中...</div>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/corinwe/wealth-invest-daily" target="_blank">GitHub</a>
+  </div>
+
+<script>
+const REPORTS = REPORTS_JSON_PLACEHOLDER;
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+// Get file param
+const params = new URLSearchParams(window.location.search);
+const file = params.get('file');
+
+async function loadReport() {
+  const container = document.getElementById('reportContent');
+
+  if (!file) {
+    container.innerHTML = '<div class="not-found"><div class="icon">📄</div><p>未指定报告文件</p></div>';
+    return;
+  }
+
+  // Find index in reports
+  const idx = REPORTS.findIndex(r => r.file === file);
+  if (idx === -1) {
+    container.innerHTML = '<div class="not-found"><div class="icon">🔍</div><p>报告未找到</p></div>';
+    return;
+  }
+
+  const report = REPORTS[idx];
+
+  // Navigation links
+  if (idx < REPORTS.length - 1) {
+    document.getElementById('prevLink').href = '?file=' + encodeURIComponent(REPORTS[idx + 1].file);
+  } else {
+    document.getElementById('prevLink').style.opacity = '0.3';
+    document.getElementById('prevLink').style.pointerEvents = 'none';
+  }
+  if (idx > 0) {
+    document.getElementById('nextLink').href = '?file=' + encodeURIComponent(REPORTS[idx - 1].file);
+  } else {
+    document.getElementById('nextLink').style.opacity = '0.3';
+    document.getElementById('nextLink').style.pointerEvents = 'none';
+  }
+
+  try {
+    const resp = await fetch('reports/' + report.file);
+    if (!resp.ok) throw new Error('Not found');
+    let md = await resp.text();
+
+    // Extract title from first line
+    const titleMatch = md.match(/^#\s+(.+)/);
+    const title = titleMatch ? titleMatch[1].trim() : report.date;
+
+    // Remove first heading if it exists
+    md = md.replace(/^#\s+.+\n?/, '');
+
+    // Configure marked
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
+
+    const unsafeHtml = marked.parse(md);
+    const cleanHtml = DOMPurify.sanitize(unsafeHtml);
+
+    const dt = new Date(report.date + 'T00:00:00');
+    const weekday = WEEKDAYS[dt.getDay()];
+
+    document.title = title + ' - 九九财富投资晨报';
+
+    container.innerHTML = `
+      <div class="date-header">${report.date}</div>
+      <div class="weekday-sub">${weekday}</div>
+      ${cleanHtml}
+    `;
+
+  } catch (e) {
+    container.innerHTML = '<div class="not-found"><div class="icon">⚠️</div><p>加载失败</p></div>';
+  }
+}
+
+loadReport();
+</script>
+</body>
+</html>
